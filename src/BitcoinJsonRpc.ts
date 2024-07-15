@@ -19,7 +19,7 @@ export default class BitcoinJsonRpc {
   }
 
   public cmd(method: string, ...params: any[]): Promise<any> {
-    return jsonRpcCmd(this.url, method, params);
+    return jsonRpcCmd(this.url, method, params, { auth: this.options.auth });
   }
 
   public cmdWithRetry(method: string, ...params: any[]): Promise<any> {
@@ -33,15 +33,14 @@ export default class BitcoinJsonRpc {
           params,
           methodIsPure,
           maxAttempts,
-          attempts: attemptN,
-        },
+          attempts: attemptN
+        }
       });
 
       try {
         const result = await this.cmd(method, ...params);
         return result;
       } catch (error: any) {
-
         const executed = getWasExecutedFromError(method, error);
         const hadEffects = !methodIsPure && executed !== false;
         const shouldRetry = !hadEffects && getShouldRetry(method, error);
@@ -54,7 +53,7 @@ export default class BitcoinJsonRpc {
           attemptN,
           maxAttempts,
           hadEffects,
-          shouldRetry,
+          shouldRetry
         });
 
         if (attemptN === maxAttempts) {
@@ -73,7 +72,7 @@ export default class BitcoinJsonRpc {
           methodIsPure,
           executed,
           attemptN,
-          maxAttempts,
+          maxAttempts
         });
 
         throw new BitcoinJsonRpcError(error, executed, getErrrorData());
@@ -83,11 +82,7 @@ export default class BitcoinJsonRpc {
     return attempt();
   }
 
-  private async cmdWithRetryAndParse<T>(
-    schema: z.ZodSchema<T>,
-    method: string,
-    ...params: any[]
-  ): Promise<T> {
+  private async cmdWithRetryAndParse<T>(schema: z.ZodSchema<T>, method: string, ...params: any[]): Promise<T> {
     const unsafe = await this.cmdWithRetry(method, ...params);
 
     try {
@@ -125,11 +120,7 @@ export default class BitcoinJsonRpc {
   }
 
   public async signRawTransactionWithWallet(hex: string) {
-    return this.cmdWithRetryAndParse(
-      schemas.signRawTransactionWithWalletResultSchema,
-      'signrawtransactionwithwallet',
-      hex
-    );
+    return this.cmdWithRetryAndParse(schemas.signRawTransactionWithWalletResultSchema, 'signrawtransactionwithwallet', hex);
   }
 
   public async lockUnspent(unlock: boolean, transactions: { txid: string; vout: number }[]) {
@@ -160,18 +151,8 @@ export default class BitcoinJsonRpc {
   // 3. locktime                  (numeric, optional, default=0) Raw locktime. Non-0 value also locktime-activates inputs
   // Result:
   // "transaction"              (string) hex string of the transaction
-  public async createRawTransaction(
-    inputs: { txid: string; vout: number; sequence?: number }[],
-    outputs: Record<string, string>,
-    lockTime?: number
-  ) {
-    return this.cmdWithRetryAndParse(
-      schemas.createRawTransactionResultSchema,
-      'createrawtransaction',
-      inputs,
-      outputs,
-      lockTime
-    );
+  public async createRawTransaction(inputs: { txid: string; vout: number; sequence?: number }[], outputs: Record<string, string>, lockTime?: number) {
+    return this.cmdWithRetryAndParse(schemas.createRawTransactionResultSchema, 'createrawtransaction', inputs, outputs, lockTime);
   }
 
   // Arguments:
@@ -216,26 +197,21 @@ export default class BitcoinJsonRpc {
   public async fundRawTransaction(
     hex: string,
     options: {
-      changeAddress?: string,
-      changePosition?: number,
-      change_type?: string,
-      includeWatching?: boolean,
-      lockUnspents?: boolean,
-      feeRate?: number,
-      subtractFeeFromOutputs?: number[],
-      replaceable?: boolean,
-      conf_target?: number,
-      estimate_mode?: BitcoinFeeEstimateMode
+      changeAddress?: string;
+      changePosition?: number;
+      change_type?: string;
+      includeWatching?: boolean;
+      lockUnspents?: boolean;
+      feeRate?: number;
+      subtractFeeFromOutputs?: number[];
+      replaceable?: boolean;
+      conf_target?: number;
+      estimate_mode?: BitcoinFeeEstimateMode;
     },
     iswitness?: boolean
   ) {
     //@todo impl with iswitness option
-    return this.cmdWithRetryAndParse(
-      schemas.fundRawTransactionResultSchema,
-      'fundrawtransaction',
-      hex,
-      options
-    );
+    return this.cmdWithRetryAndParse(schemas.fundRawTransactionResultSchema, 'fundrawtransaction', hex, options);
   }
 
   // Arguments:
@@ -271,20 +247,7 @@ export default class BitcoinJsonRpc {
     avoidReuse: boolean | null,
     asset: string | null
   ) {
-    return this.cmdWithRetryAndParse(
-      schemas.sendToAddressResultSchema,
-      'sendtoaddress',
-      address,
-      amount,
-      comment,
-      commentTo,
-      subtractFeeFromAmount,
-      replaceable,
-      confTarget,
-      estimateMode,
-      avoidReuse,
-      asset
-    );
+    return this.cmdWithRetryAndParse(schemas.sendToAddressResultSchema, 'sendtoaddress', address, amount, comment, commentTo, subtractFeeFromAmount, replaceable, confTarget, estimateMode, avoidReuse, asset);
   }
 
   public async getTransaction(txhash: string) {
@@ -339,46 +302,20 @@ export default class BitcoinJsonRpc {
     return this.cmdWithRetryAndParse(schemas.getBalanceResultSchema, 'getbalance', '*', minConf);
   }
 
-  public async generateToAddress(nblocks: number, address:string) {
+  public async generateToAddress(nblocks: number, address: string) {
     return this.cmdWithRetryAndParse(schemas.generateToAddressResultSchema, 'generatetoaddress', nblocks, address);
   }
 
-  public async getLiquidBalanceForAsset(
-    minConf: number | null = null,
-    includeWatchOnly: boolean | null = null,
-    avoidReuse: boolean | null = null,
-    assetLabel: string
-  ) {
-    return this.cmdWithRetryAndParse(
-      schemas.getLiquidBalanceForAssetResultSchema,
-      'getbalance',
-      '*',
-      minConf,
-      includeWatchOnly,
-      avoidReuse,
-      assetLabel
-    );
+  public async getLiquidBalanceForAsset(minConf: number | null = null, includeWatchOnly: boolean | null = null, avoidReuse: boolean | null = null, assetLabel: string) {
+    return this.cmdWithRetryAndParse(schemas.getLiquidBalanceForAssetResultSchema, 'getbalance', '*', minConf, includeWatchOnly, avoidReuse, assetLabel);
   }
 
-  public async getLiquidBalance(
-    minConf: number | null = null,
-    includeWatchOnly: boolean | null = null,
-    assetLabel: string
-  ) {
-    return this.cmdWithRetryAndParse(
-      schemas.getLiquidBalanceResultSchema,
-      'getbalance',
-      '*',
-      minConf,
-      includeWatchOnly
-    );
+  public async getLiquidBalance(minConf: number | null = null, includeWatchOnly: boolean | null = null, assetLabel: string) {
+    return this.cmdWithRetryAndParse(schemas.getLiquidBalanceResultSchema, 'getbalance', '*', minConf, includeWatchOnly);
   }
 
   public async omniGetWalletAddressBalances() {
-    return this.cmdWithRetryAndParse(
-      schemas.omniGetWalletAddressBalancesResultSchema,
-      'omni_getwalletaddressbalances'
-    );
+    return this.cmdWithRetryAndParse(schemas.omniGetWalletAddressBalancesResultSchema, 'omni_getwalletaddressbalances');
   }
 
   public async ancientGetInfo() {
@@ -394,33 +331,12 @@ export default class BitcoinJsonRpc {
 
   // Result:
   // "hash"                  (string) the hex-encoded transaction hash
-  public async omniFundedSend(
-    fromAddress: string,
-    toAddress: string,
-    propertyId: number,
-    amount: string,
-    feeAddress: string
-  ) {
-    return this.cmdWithRetryAndParse(
-      schemas.omniFundedSendResultSchema,
-      'omni_funded_send',
-      fromAddress,
-      toAddress,
-      propertyId,
-      amount,
-      feeAddress
-    );
+  public async omniFundedSend(fromAddress: string, toAddress: string, propertyId: number, amount: string, feeAddress: string) {
+    return this.cmdWithRetryAndParse(schemas.omniFundedSendResultSchema, 'omni_funded_send', fromAddress, toAddress, propertyId, amount, feeAddress);
   }
 
   public async omniFundedSendAll(fromAddress: string, toAddress: string, ecosystem: 1 | 2, feeAddress: string) {
-    return this.cmdWithRetryAndParse(
-      schemas.omniFundedSendAllResultSchema,
-      'omni_funded_sendall',
-      fromAddress,
-      toAddress,
-      ecosystem,
-      feeAddress
-    );
+    return this.cmdWithRetryAndParse(schemas.omniFundedSendAllResultSchema, 'omni_funded_sendall', fromAddress, toAddress, ecosystem, feeAddress);
   }
 
   public async omniGetTransaction(txid: string) {
@@ -481,14 +397,7 @@ export default class BitcoinJsonRpc {
   // 5. redeemaddress        (string, optional) an address that can spend the transaction dust (sender by default)
   // 6. referenceamount      (string, optional) a bitcoin amount that is sent to the receiver (minimal by default)
   public async omniSend(fromAddress: string, toAddress: string, propertyId: number, amount: string) {
-    return this.cmdWithRetryAndParse(
-      schemas.omniSendSchema,
-      'omni_send',
-      fromAddress,
-      toAddress,
-      propertyId,
-      amount
-    );
+    return this.cmdWithRetryAndParse(schemas.omniSendSchema, 'omni_send', fromAddress, toAddress, propertyId, amount);
   }
 
   public async zcashGetNewAddress(type?: string) {

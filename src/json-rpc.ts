@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import createDebug from 'debug';
 import { throwIfErrorInResponseDataWithExtraProps, maybeShortenErrorMessage } from './utils.js';
 
@@ -6,17 +6,12 @@ const debug = createDebug('bitcoin-json-rpc');
 
 const MAX_LOG_LENGTH = 250;
 
-export const jsonRpcCmd: (url: string, method: string, params?: any) => Promise<any> = async (
-  url: string,
-  method: string,
-  params: any[],
-  _options: object | undefined = {}
-) => {
+export const jsonRpcCmd = async (url: string, method: string, params: any[], _options: object | undefined = {}, config?: AxiosRequestConfig): Promise<any> => {
   const payload = {
     jsonrpc: '2.0',
     id: 1,
     method,
-    params,
+    params
   };
 
   debug(`--> REQ`, payload);
@@ -24,7 +19,7 @@ export const jsonRpcCmd: (url: string, method: string, params?: any) => Promise<
   let response: AxiosResponse;
 
   try {
-    response = await axios.post(url, payload);
+    response = await axios.post(url, payload, config);
   } catch (error) {
     const errorAsAny = error as any;
 
@@ -34,9 +29,9 @@ export const jsonRpcCmd: (url: string, method: string, params?: any) => Promise<
           jsonRpcRequest: {
             url,
             method,
-            params,
-          },
-        },
+            params
+          }
+        }
       });
     }
 
@@ -55,9 +50,9 @@ export const jsonRpcCmd: (url: string, method: string, params?: any) => Promise<
         jsonRpcRequest: {
           url,
           method,
-          params,
-        },
-      },
+          params
+        }
+      }
     });
   }
 
@@ -71,9 +66,9 @@ export const jsonRpcCmd: (url: string, method: string, params?: any) => Promise<
         jsonRpcRequest: {
           url,
           method,
-          params,
-        },
-      },
+          params
+        }
+      }
     });
   }
 
